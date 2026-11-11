@@ -1,17 +1,3 @@
-"""Extração do dataset — Pesquisa Operacional, Grupo 16.
-
-Baixa a malha viária de um bairro de Curitiba. As tabelas do dataset vão para
-`datasets/`; o grafo salvo, os pontos s/t e a figura vão para `auxiliares/`.
-O Dijkstra fica na Etapa 2.
-
-    python extrair.py
-    python extrair.py --forcar-download
-    python extrair.py --sem-figura
-
-Dados: OpenStreetMap, sob Open Database License (ODbL).
-© colaboradores do OpenStreetMap.
-"""
-
 import argparse
 
 import coleta

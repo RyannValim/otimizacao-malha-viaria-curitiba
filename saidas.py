@@ -1,21 +1,17 @@
-"""Tudo que vira arquivo em disco ou número no terminal."""
-
 import json
 
 import osmnx as ox
 
 import config
 
-
+# Colunas do OSM podem vir como lista; viram texto separado por barra.
 def achatar(valor):
-    """Colunas do OSM podem vir como lista; viram texto separado por barra."""
     if isinstance(valor, list):
         return " / ".join(str(item) for item in valor)
     return valor
 
-
+# Grava nos.csv e arcos.csv, e devolve a tabela de arcos.
 def salvar_tabelas(grafo):
-    """Grava nos.csv e arcos.csv, e devolve a tabela de arcos."""
     nos, arcos = ox.graph_to_gdfs(grafo)
 
     nos = nos.reindex(columns=config.COLUNAS_NOS).reset_index()
@@ -30,9 +26,8 @@ def salvar_tabelas(grafo):
     print(f"arcos.csv -> {arcos.shape[0]:>6} linhas, {arcos.shape[1]} colunas")
     return arcos
 
-
+# Grava pontos.json com os nós s e t, e imprime os links para conferência.
 def salvar_pontos(origem, destinos):
-    """Grava pontos.json com os nós s e t, e imprime os links para conferência."""
     print()
     print("=== ORIGEM E DESTINOS ===")
     print(f"Origem  s = {origem['no']}  ({origem['endereco']})")
@@ -50,9 +45,8 @@ def salvar_pontos(origem, destinos):
     )
     print(f"Pontos salvos em {config.CAMINHO_PONTOS}")
 
-
+# Grava malha.png, a evidência visual da coleta.
 def salvar_figura(grafo):
-    """Grava malha.png, a evidência visual da coleta."""
     figura, eixo = ox.plot_graph(
         grafo, node_size=3, node_color="#4a90d9", edge_linewidth=0.5,
         edge_color="#999999", bgcolor="white", figsize=(10, 10),
@@ -66,9 +60,8 @@ def salvar_figura(grafo):
     figura.savefig(config.CAMINHO_FIGURA, dpi=200, bbox_inches="tight", facecolor="white")
     print(f"Figura salva em {config.CAMINHO_FIGURA}")
 
-
+# Imprime os números da seção *Cenário e Dataset* do documento.
 def imprimir_estatisticas(grafo, arcos):
-    """Imprime os números da seção *Cenário e Dataset* do documento."""
     print()
     print("=== RESUMO DA REDE ===")
     print(f"Região:     {config.LUGAR}")

@@ -1,5 +1,3 @@
-"""Parâmetros do projeto. Único arquivo com valores a ajustar."""
-
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent

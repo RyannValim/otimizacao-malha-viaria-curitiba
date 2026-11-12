@@ -46,3 +46,32 @@ VELOCIDADE_PADRAO = 40
 # Colunas exportadas. Os nomes vêm do OSMnx e por isso ficam em inglês.
 COLUNAS_NOS = ["y", "x", "street_count"]
 COLUNAS_ARCOS = ["name", "highway", "oneway", "length", "speed_kph", "travel_time"]
+
+# --- Etapa 2: Dijkstra ---
+
+# Saídas da resolução: tabela de comparação e uma figura por destino, na mesma
+# ordem de ENDERECOS_DESTINO.
+CAMINHO_COMPARACAO = PASTA_AUXILIARES / "comparacao.csv"
+CAMINHOS_FIGURAS_ROTAS = [
+    PASTA_AUXILIARES / "rotas_t1_desembargador_motta.png",
+    PASTA_AUXILIARES / "rotas_t2_olavo_bilac.png",
+]
+
+# Os dois pesos comparados: travel_time é o custo `w` do modelo, length é a
+# referência de menor distância. Nomes em inglês porque são atributos do OSMnx.
+PESOS = ["travel_time", "length"]
+UNIDADES = {"travel_time": "s", "length": "m"}
+
+# Cor, espessura e rótulo de cada rota nas figuras. A rota por tempo é desenhada
+# primeiro e mais grossa, para continuar visível nos trechos em que as duas
+# coincidem.
+ESTILOS_ROTAS = {
+    "travel_time": {"cor": "#1f77b4", "espessura": 5.0},
+    "length": {"cor": "#ff7f0e", "espessura": 2.2},
+}
+
+# Quantas iterações do passo a passo imprimir por execução.
+ITERACOES_EXIBIDAS = 15
+
+# Colunas da tabela de comparação gravada em comparacao.csv.
+COLUNAS_COMPARACAO = ["destino", "no", "endereco", "peso", "arcos", "tempo_s", "distancia_m"]

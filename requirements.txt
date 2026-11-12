@@ -3,7 +3,8 @@
 
 osmnx>=2.0,<3.0        # consulta Nominatim/Overpass e monta o grafo viário
 pandas>=2.0            # tabelas de nós e arcos (puxado também pelo osmnx)
-matplotlib>=3.8        # figura da malha (malha.png)
+matplotlib>=3.8        # figuras da malha e das rotas
 networkx>=3.0          # estrutura de grafo usada pelo osmnx
 geopandas>=1.0         # graph_to_gdfs devolve GeoDataFrames
 scikit-learn>=1.4      # exigido por nearest_nodes para achar os nós s e t
+pytest>=8.0            # roda test_dijkstra.py, a validação da Etapa 2

@@ -1,12 +1,13 @@
 # Documentação técnica — Etapa 1: extração do dataset
 
 **Projeto:** Otimização da Malha Viária de Curitiba — Pesquisa Operacional, Grupo 16
-**Repositório:** `d:\codes\up\otimizacao-malha-viaria-curitiba`
+**Repositório:** `d:\codes\otimizacao-malha-viaria-curitiba`
 **Data desta documentação:** 11 de novembro de 2026
+**Atualizada em:** 12 de novembro de 2026, com os resultados da Etapa 2
 
 Este documento descreve o código e os dados produzidos na Etapa 1. Todos os números
 aqui foram medidos nos arquivos gerados, não estimados. A Etapa 2
-(implementação do Dijkstra) ainda não começou.
+(implementação do Dijkstra) está resumida na seção 12.
 
 ---
 
@@ -27,28 +28,37 @@ documento descreve.
 ```
 config.py                       parâmetros do cenário
 coleta.py                       comunicação com o OpenStreetMap
+dijkstra.py                     o algoritmo de caminho mínimo
 saidas.py                       gravação dos arquivos e estatísticas
-extrair.py                      ponto de entrada
+extrair.py                      ponto de entrada da Etapa 1
+resolver.py                     ponto de entrada da Etapa 2
+test_dijkstra.py                validação dos resultados
 requirements.txt                dependências
 README.md                       instruções de uso
 datasets/                       o dataset que o trabalho entrega
   nos.csv
   arcos.csv
-auxiliares/                     subprodutos da extração e documentação
+auxiliares/                     subprodutos da extração, resultados e documentação
   grafo.graphml
   pontos.json
   malha.png
-  malha_batel_google_maps.png   captura do Google Maps, para comparação visual
-  DOCUMENTACAO.md               este arquivo
+  comparacao.csv                a tabela de resultados da Etapa 2
+  rotas_t1_desembargador_motta.png
+  rotas_t2_olavo_bilac.png
+  docs/
+    DOCUMENTACAO.md             este arquivo
+    bairro_batel_google_maps.png            captura do Google Maps
+    Trabalho_Pesquisa-Operacional-Grupo_16.pdf
 cache/                          cache HTTP da OSMnx (ignorado pelo git)
 .venv/                          ambiente virtual (ignorado pelo git)
 ```
 
 `datasets/` guarda apenas as duas tabelas que constituem o dataset propriamente
-dito. Todo o resto que a extração produz — o grafo serializado, os pontos `s`/`t`
-e a figura — fica em `auxiliares/`.
+dito. Todo o resto que o código produz — o grafo serializado, os pontos `s`/`t`,
+as figuras e a tabela de comparação — fica em `auxiliares/`, com a documentação
+em `auxiliares/docs/`.
 
-São **242 linhas de Python** em 4 arquivos.
+São **688 linhas de Python** em 7 arquivos.
 
 ---
 
@@ -74,14 +84,16 @@ Duas opções de linha de comando: `--forcar-download` (ignora o graphml salvo e
 baixa de novo) e `--sem-figura` (pula o passo 6). Nenhuma outra. Os parâmetros do
 cenário ficam exclusivamente em `config.py`.
 
-### `config.py` (45 linhas)
+### `config.py` (77 linhas)
 
-Constantes, sem lógica. Define os caminhos dos cinco arquivos de saída, o recorte
+Constantes, sem lógica. Define os caminhos dos arquivos de saída, o recorte
 (`LUGAR = "Batel, Curitiba, Parana, Brazil"`), o tipo de malha (`"drive"`), os
 endereços de origem e destino, a tabela `VELOCIDADES_BR` e as listas de colunas
-exportadas.
+exportadas. A segunda metade do arquivo é da Etapa 2: os dois pesos comparados
+(`PESOS`), o estilo de cada rota nas figuras e quantas iterações do passo a passo
+imprimir.
 
-### `coleta.py` (52 linhas)
+### `coleta.py` (44 linhas)
 
 Isola tudo que depende de rede. Quatro funções:
 
@@ -92,15 +104,32 @@ Isola tudo que depende de rede. Quatro funções:
   Devolve um dicionário com `papel`, `endereco`, `no`, `latitude`, `longitude`.
 - `localizar_origem_e_destinos(grafo)` — aplica a anterior aos três endereços.
 
-### `saidas.py` (96 linhas)
+### `saidas.py` (213 linhas)
 
-Cinco funções: `achatar`, `salvar_tabelas`, `salvar_pontos`, `salvar_figura` e
-`imprimir_estatisticas`. Nenhuma faz chamada de rede.
+Tudo que grava arquivo ou imprime, de ambas as etapas, e nada que use rede. Da
+Etapa 1: `achatar`, `salvar_tabelas`, `salvar_pontos`, `salvar_figura` e
+`imprimir_estatisticas`. Da Etapa 2: `imprimir_passo_a_passo`,
+`imprimir_comparacao`, `salvar_comparacao` e `salvar_figura_rotas`.
 
-### `extrair.py` (49 linhas)
+### `extrair.py` (38 linhas)
 
 Apenas `main()`: monta o `argparse`, cria a pasta de saída e chama as funções
 acima na ordem descrita.
+
+### `dijkstra.py` (83 linhas)
+
+O algoritmo, descrito na seção 12. Não importa OSMnx, não imprime e não lê
+arquivo: só `heapq` e o grafo que recebe.
+
+### `resolver.py` (100 linhas)
+
+Ponto de entrada da Etapa 2. Carrega o grafo e o `pontos.json`, roda o Dijkstra
+uma vez por peso, monta a tabela de comparação e manda o `saidas.py` gravar.
+Duas opções: `--iteracoes N` e `--sem-figura`. Não acessa a rede.
+
+### `test_dijkstra.py` (133 linhas)
+
+As 20 asserções que validam os resultados contra os valores da seção 8.
 
 ---
 
@@ -332,13 +361,20 @@ Calculados com o `nx.shortest_path_length` do NetworkX sobre `grafo.graphml`, co
 `weight="travel_time"`. **A implementação própria do Dijkstra deve reproduzir estes
 valores.** Se divergir, há erro na implementação.
 
-| Rota | Tempo mínimo |
-|---|---|
-| `s` → `t₁` (Desembargador Motta) | 195,5 s |
-| `s` → `t₂` (Olavo Bilac) | 87,6 s |
+| Rota | Tempo mínimo | Arcos | Distância mínima |
+|---|---|---|---|
+| `s` → `t₁` (Desembargador Motta) | 195,5 s | 20 | 2.431 m |
+| `s` → `t₂` (Olavo Bilac) | 87,6 s | 7 | 753 m |
+
+**Reproduzidos.** O `dijkstra.py` chega a 195,48 s e 87,63 s, com 20 e 7 arcos, e
+a 2.430,80 m e 752,74 m quando o peso é `length`. O `test_dijkstra.py` falha se
+algum desses números sair da tolerância de 0,05 s e 0,5 m, ou se a contagem de
+arcos mudar.
 
 Ambos os destinos são alcançáveis a partir de `s`: os três nós estão na componente
-fortemente conexa principal, que contém 163 dos 166 nós.
+fortemente conexa principal, que contém 163 dos 166 nós. A partir de `s`, 164 dos
+166 nós recebem rótulo finito — os outros dois são extremidades onde a mão única
+impede a entrada.
 
 ---
 
@@ -404,12 +440,94 @@ GeoPandas 1.2.0.
 
 ---
 
-## 12. O que falta para a Etapa 2
+## 12. O que a Etapa 2 entregou
 
-1. Implementar o Dijkstra com `heapq`, lendo `auxiliares/grafo.graphml` e
-   `auxiliares/pontos.json`.
-2. Executar duas vezes para cada destino: uma com `travel_time`, outra com
-   `length`, e comparar as rotas.
-3. Sobrepor as rotas ao mapa do bairro (a geometria do graphml permite traçado
-   real das ruas).
-4. Validar os tempos contra os valores de referência da seção 8.
+### O algoritmo
+
+`dijkstra.py` implementa o algoritmo à mão, com `heapq` — sem
+`nx.shortest_path` nem qualquer solver pronto. Três funções:
+
+| Função | O que faz |
+|---|---|
+| `dijkstra(grafo, origem, peso)` | devolve `(rotulos, antecessores, registro)` |
+| `reconstruir_caminho(antecessores, origem, destino)` | remonta a sequência de nós; `None` se inalcançável |
+| `medir_caminho(grafo, caminho, peso)` | mede arcos, tempo e distância do caminho |
+
+A fila de prioridade guarda pares `(rótulo, nó)`. Quando um rótulo melhora, o par
+novo é empilhado sem remover o antigo — *lazy deletion*: o primeiro par de um nó a
+sair da fila é o definitivo, e os seguintes são descartados. São 173 extrações
+para 164 nós fechados com `travel_time`, e 170 para os mesmos 164 com `length`.
+O custo é `O((|V| + |A|) log |V|)`, aqui com `|V| = 166` e `|A| = 326`.
+
+Entre arcos paralelos — mesmo par de nós, `key` diferente — vale o mais barato
+pelo peso em uso. Este grafo não tem nenhum, mas o `MultiDiGraph` admite.
+
+### Uma execução por peso, não uma por destino
+
+O Dijkstra é de origem única. Partindo de `s`, **uma** execução rotula todos os
+nós alcançáveis, e os dois destinos saem da mesma árvore de antecessores — é o
+argumento da seção 7. Parar quando um `t` específico sai da fila seria apenas uma
+otimização de parada antecipada, não outro algoritmo. Por isso o `resolver.py`
+roda duas vezes, uma por peso, e não quatro.
+
+### O passo a passo
+
+`dijkstra()` não imprime: devolve o `registro`, uma lista com um dicionário por
+iteração — o nó fechado, seu rótulo definitivo, quantas extrações obsoletas foram
+descartadas antes dele, e todos os vizinhos examinados com a conta
+(`rótulo + custo = candidato`), o rótulo que o vizinho tinha e o veredito
+(`relaxa` ou `mantém`). Quem formata é o `saidas.imprimir_passo_a_passo`, que
+mostra as primeiras 15 iterações de cada execução.
+
+Separar o registro da impressão deixa o algoritmo testável sem capturar `stdout`
+e permite imprimir 15 ou 200 iterações sem tocar nele.
+
+### Os resultados
+
+Cada rota foi medida nas duas métricas, não só naquela que a gerou:
+
+| Destino | Peso | Arcos | Tempo | Distância |
+|---|---|---|---|---|
+| `t₁` (Desembargador Motta) | `travel_time` | 20 | **195,48 s** | 2.559,00 m |
+| `t₁` | `length` | 19 | 207,87 s | **2.430,80 m** |
+| `t₂` (Olavo Bilac) | `travel_time` | 7 | **87,63 s** | 789,29 m |
+| `t₂` | `length` | 6 | 90,33 s | **752,74 m** |
+
+Ir pela rota mais curta custa 12,39 s a mais (+6,3%) até `t₁` e 2,70 s (+3,1%)
+até `t₂`, poupando 128 m e 37 m. As rotas por tempo preferem as vias arteriais:
+mais metros, menos segundos. É exatamente o efeito que o modelo pretende
+capturar ao adotar `travel_time` como peso `w` em vez de `length`.
+
+A tabela sai em `auxiliares/comparacao.csv`, uma linha por par (destino, peso).
+
+### As figuras
+
+`auxiliares/rotas_t1_desembargador_motta.png` e `rotas_t2_olavo_bilac.png`: a
+malha do bairro em cinza e, sobre ela, as duas rotas daquele destino — azul para
+a de menor tempo, laranja para a de menor distância. O traçado segue a curva real
+das ruas, lida do atributo `geometry` do graphml (seção 5); onde as duas rotas
+coincidem, a laranja é desenhada por dentro da azul, mais fina, para que ambas
+continuem visíveis.
+
+### A validação
+
+`python -m pytest` roda 20 asserções em `test_dijkstra.py`: os tempos e as
+distâncias ótimas da seção 8, a contagem de arcos, a não negatividade dos pesos,
+a igualdade entre o rótulo do destino e o custo do caminho medido arco a arco, a
+ordem não decrescente dos rótulos fechados, o alcance de 164 dos 166 nós, e a
+conferência de que os nós `s`, `t₁` e `t₂` do `pontos.json` continuam sendo os do
+enunciado.
+
+### Fluxo de uma execução
+
+`python resolver.py` executa, nesta ordem:
+
+1. `carregar_grafo()` — lê `auxiliares/grafo.graphml` pela `ox.io.load_graphml`,
+   que converte de volta para `float` os pesos que o GraphML guarda como texto.
+2. `carregar_pontos()` — lê `auxiliares/pontos.json`, sem geocodificar de novo.
+3. `resolver()` — para cada peso, roda o Dijkstra, imprime o passo a passo e
+   extrai os dois caminhos da árvore de antecessores.
+4. `saidas.imprimir_comparacao()` e `saidas.salvar_comparacao()`.
+5. `saidas.salvar_figura_rotas()` para cada destino, salvo com `--sem-figura`.
+
+Nenhum desses passos acessa a rede.

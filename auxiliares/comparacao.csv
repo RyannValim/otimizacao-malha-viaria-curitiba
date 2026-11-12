@@ -1,0 +1,5 @@
+destino,no,endereco,peso,arcos,tempo_s,distancia_m
+t1,1386657461,"Rua Desembargador Motta, Curitiba, Parana, Brazil",travel_time,20,195.48,2559.0
+t1,1386657461,"Rua Desembargador Motta, Curitiba, Parana, Brazil",length,19,207.87,2430.8
+t2,324728738,"Rua Olavo Bilac, Curitiba, Parana, Brazil",travel_time,7,87.63,789.29
+t2,324728738,"Rua Olavo Bilac, Curitiba, Parana, Brazil",length,6,90.33,752.74
